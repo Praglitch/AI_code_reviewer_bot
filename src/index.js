@@ -144,7 +144,13 @@ async function run() {
       console.error("Failed to post fallback failure comment:", commentError);
     }
 
-    core.setFailed(error.message);
+    const failOnAiError = process.env.FAIL_ON_AI_ERROR === "true";
+    if (failOnAiError) {
+      core.setFailed(error.message);
+      return;
+    }
+
+    core.warning(`AI review failed but workflow is continuing: ${error.message}`);
   }
 }
 

@@ -29,6 +29,7 @@ Notes:
 
 - `GITHUB_TOKEN` is provided automatically by GitHub Actions.
 - Works for public and private repositories when secrets and permissions are configured.
+- Optional: set `FAIL_ON_AI_ERROR=true` if you want provider/API errors to fail the workflow.
 
 ## 3. How to customize the review prompt
 
@@ -74,6 +75,12 @@ Recommendation:
 
 - API key is invalid or revoked.
 - Regenerate key in Google AI Studio and update repository secret.
+
+### Error: AI review failed: 429 / quota exceeded
+
+- This means your Gemini project currently has no available free-tier quota or has hit limits.
+- The action now posts a warning comment and continues by default.
+- If you want this to fail CI, set `FAIL_ON_AI_ERROR=true` in workflow env.
 
 ### Error: No reviewable code changes found
 
