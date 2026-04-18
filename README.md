@@ -99,4 +99,22 @@ Recommendation:
 - Confirm event type is one of opened/synchronize/reopened.
 - Confirm workflow file is on default branch.
 
+## 7. Run locally (optional)
+
+This project is primarily a GitHub Action, but it can be run locally for testing.
+
+Set these environment variables:
+
+- `GITHUB_TOKEN` (a token with repo access)
+- `GROQ_API_KEY`
+- `GITHUB_OWNER` (repo owner)
+- `GITHUB_REPO` (repo name)
+- `GITHUB_PULL_NUMBER` (numeric PR number)
+
+Then run:
+
+```bash
+npm start
+```
+
 Trigger note: test change to run AI PR review workflow.
