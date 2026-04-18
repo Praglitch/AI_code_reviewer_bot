@@ -90,3 +90,5 @@ Recommendation:
 - Confirm PR targets `main`.
 - Confirm event type is one of opened/synchronize/reopened.
 - Confirm workflow file is on default branch.
+
+Trigger note: test change to run AI PR review workflow.
