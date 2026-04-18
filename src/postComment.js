@@ -1,5 +1,5 @@
 const REVIEW_HEADER = "## 🤖 AI Code Review";
-const REVIEW_FOOTER = "_Powered by Claude claude-sonnet-4-20250514 — review suggestions, don't blindly apply them._";
+const REVIEW_FOOTER = "_Powered by Groq — review suggestions, don't blindly apply them._";
 
 function buildCommentBody({ content, truncated, originalLength }) {
   const sections = [REVIEW_HEADER, ""];

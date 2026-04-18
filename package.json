@@ -1,12 +1,12 @@
 {
   "name": "ai-pr-code-reviewer",
   "version": "1.0.0",
-  "description": "GitHub Action that reviews pull requests with Anthropic Claude",
+  "description": "GitHub Action that reviews pull requests with Groq",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/getDiff.js && node --check src/filterDiff.js && node --check src/reviewWithClaude.js && node --check src/postComment.js"
+    "check": "node --check src/index.js && node --check src/getDiff.js && node --check src/filterDiff.js && node --check src/reviewWithGroq.js && node --check src/postComment.js"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -14,8 +14,8 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@anthropic-ai/sdk": "^0.90.0",
     "@octokit/rest": "^22.0.0",
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.1",
+    "openai": "^6.34.0"
   }
 }

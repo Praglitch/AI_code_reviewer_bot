@@ -5,43 +5,69 @@ require("dotenv").config();
 
 const { getDiff } = require("./getDiff");
 const { filterDiff } = require("./filterDiff");
-const { reviewWithClaude } = require("./reviewWithClaude");
+const { reviewWithGroq } = require("./reviewWithGroq");
 const { buildCommentBody, postOrUpdateComment } = require("./postComment");
+
+function getPullRequestContext() {
+  const context = github.context;
+  const pr = context.payload.pull_request;
+
+  if (pr && context.repo && context.repo.owner && context.repo.repo) {
+    return {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      pullNumber: pr.number,
+      baseRef: pr.base && pr.base.ref
+    };
+  }
+
+  const owner = process.env.GITHUB_OWNER;
+  const repo = process.env.GITHUB_REPO;
+  const pullNumberRaw = process.env.GITHUB_PULL_NUMBER;
+  const pullNumber = Number.parseInt(pullNumberRaw || "", 10);
+
+  if (!owner || !repo || !Number.isInteger(pullNumber) || pullNumber <= 0) {
+    throw new Error(
+      "Missing pull request context. In GitHub Actions, run on pull_request events. For local runs, set GITHUB_OWNER, GITHUB_REPO, and GITHUB_PULL_NUMBER."
+    );
+  }
+
+  return {
+    owner,
+    repo,
+    pullNumber,
+    baseRef: process.env.GITHUB_BASE_REF || null
+  };
+}
 
 function getExecutionContext() {
   const token = process.env.GITHUB_TOKEN;
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
 
   if (!token) {
     throw new Error("Missing required environment variable: GITHUB_TOKEN");
   }
 
-  if (!anthropicApiKey) {
-    throw new Error("Missing required environment variable: ANTHROPIC_API_KEY");
+  if (!groqApiKey) {
+    throw new Error("Missing required environment variable: GROQ_API_KEY");
   }
 
-  const context = github.context;
-  const repoInfo = context.repo;
-  const pr = context.payload.pull_request;
+  const prContext = getPullRequestContext();
 
-  if (!pr) {
-    throw new Error("This action only runs on pull_request events.");
-  }
-
-  if (pr.base && pr.base.ref !== "main") {
+  if (prContext.baseRef && prContext.baseRef !== "main") {
     return {
       skip: true,
-      reason: `Skipping review because PR targets '${pr.base.ref}', not 'main'.`
+      reason: `Skipping review because PR targets '${prContext.baseRef}', not 'main'.`
     };
   }
 
   return {
     skip: false,
     token,
-    anthropicApiKey,
-    owner: repoInfo.owner,
-    repo: repoInfo.repo,
-    pullNumber: pr.number
+    groqApiKey,
+    owner: prContext.owner,
+    repo: prContext.repo,
+    pullNumber: prContext.pullNumber
   };
 }
 
@@ -90,9 +116,9 @@ async function run() {
       return;
     }
 
-    // Ask Claude to generate a structured review for the filtered diff.
-    const review = await reviewWithClaude({
-      anthropicApiKey: execution.anthropicApiKey,
+    // Ask Groq to generate a structured review for the filtered diff.
+    const review = await reviewWithGroq({
+      groqApiKey: execution.groqApiKey,
       diff: filtered.diff
     });
 
@@ -144,7 +170,13 @@ async function run() {
       console.error("Failed to post fallback failure comment:", commentError);
     }
 
-    core.setFailed(error.message);
+    const failOnAiError = process.env.FAIL_ON_AI_ERROR === "true";
+    if (failOnAiError) {
+      core.setFailed(error.message);
+      return;
+    }
+
+    core.warning(`AI review failed but workflow is continuing: ${error.message}`);
   }
 }
 

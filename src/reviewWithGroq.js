@@ -1,6 +1,6 @@
-const Anthropic = require("@anthropic-ai/sdk");
+const OpenAI = require("openai");
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 const SYSTEM_PROMPT = [
   "You are a senior software engineer reviewing a pull request diff.",
@@ -18,37 +18,29 @@ const SYSTEM_PROMPT = [
   "If there are no issues, explicitly state that there are no blocking issues and do not invent problems."
 ].join("\n");
 
-function createAnthropicClient(apiKey) {
-  return new Anthropic({ apiKey });
+function createGroqClient(apiKey) {
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1"
+  });
 }
 
-async function reviewWithClaude({ anthropicApiKey, diff }) {
-  const client = createAnthropicClient(anthropicApiKey);
+async function reviewWithGroq({ groqApiKey, diff }) {
+  const client = createGroqClient(groqApiKey);
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model: MODEL,
-    max_tokens: 1500,
-    system: SYSTEM_PROMPT,
+    temperature: 0.2,
     messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Review this pull request diff:\n\n${diff}`
-          }
-        ]
-      }
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `Review this pull request diff:\n\n${diff}` }
     ]
   });
 
-  const textBlocks = Array.isArray(response.content)
-    ? response.content.filter((item) => item.type === "text").map((item) => item.text)
-    : [];
+  const reviewText = (response.choices?.[0]?.message?.content || "").trim();
 
-  const reviewText = textBlocks.join("\n\n").trim();
   if (!reviewText) {
-    throw new Error("Claude returned an empty review response.");
+    throw new Error("Groq returned an empty review response.");
   }
 
   return {
@@ -58,6 +50,6 @@ async function reviewWithClaude({ anthropicApiKey, diff }) {
 }
 
 module.exports = {
-  reviewWithClaude,
+  reviewWithGroq,
   MODEL
 };
