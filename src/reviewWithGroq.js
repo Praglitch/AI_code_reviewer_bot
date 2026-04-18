@@ -1,6 +1,6 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai");
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 const SYSTEM_PROMPT = [
   "You are a senior software engineer reviewing a pull request diff.",
@@ -18,23 +18,29 @@ const SYSTEM_PROMPT = [
   "If there are no issues, explicitly state that there are no blocking issues and do not invent problems."
 ].join("\n");
 
-function createGeminiClient(apiKey) {
-  return new GoogleGenerativeAI(apiKey);
+function createGroqClient(apiKey) {
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1"
+  });
 }
 
-async function reviewWithGemini({ geminiApiKey, diff }) {
-  const genAI = createGeminiClient(geminiApiKey);
-  const model = genAI.getGenerativeModel({ model: MODEL });
+async function reviewWithGroq({ groqApiKey, diff }) {
+  const client = createGroqClient(groqApiKey);
 
-  const result = await model.generateContent([
-    { text: SYSTEM_PROMPT },
-    { text: `Review this pull request diff:\n\n${diff}` }
-  ]);
+  const response = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0.2,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `Review this pull request diff:\n\n${diff}` }
+    ]
+  });
 
-  const reviewText = result.response.text().trim();
+  const reviewText = (response.choices?.[0]?.message?.content || "").trim();
 
   if (!reviewText) {
-    throw new Error("Gemini returned an empty review response.");
+    throw new Error("Groq returned an empty review response.");
   }
 
   return {
@@ -44,6 +50,6 @@ async function reviewWithGemini({ geminiApiKey, diff }) {
 }
 
 module.exports = {
-  reviewWithGemini,
+  reviewWithGroq,
   MODEL
 };

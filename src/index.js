@@ -5,19 +5,19 @@ require("dotenv").config();
 
 const { getDiff } = require("./getDiff");
 const { filterDiff } = require("./filterDiff");
-const { reviewWithGemini } = require("./reviewWithGemini");
+const { reviewWithGroq } = require("./reviewWithGroq");
 const { buildCommentBody, postOrUpdateComment } = require("./postComment");
 
 function getExecutionContext() {
   const token = process.env.GITHUB_TOKEN;
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
 
   if (!token) {
     throw new Error("Missing required environment variable: GITHUB_TOKEN");
   }
 
-  if (!geminiApiKey) {
-    throw new Error("Missing required environment variable: GEMINI_API_KEY");
+  if (!groqApiKey) {
+    throw new Error("Missing required environment variable: GROQ_API_KEY");
   }
 
   const context = github.context;
@@ -38,7 +38,7 @@ function getExecutionContext() {
   return {
     skip: false,
     token,
-    geminiApiKey,
+    groqApiKey,
     owner: repoInfo.owner,
     repo: repoInfo.repo,
     pullNumber: pr.number
@@ -90,9 +90,9 @@ async function run() {
       return;
     }
 
-    // Ask Gemini to generate a structured review for the filtered diff.
-    const review = await reviewWithGemini({
-      geminiApiKey: execution.geminiApiKey,
+    // Ask Groq to generate a structured review for the filtered diff.
+    const review = await reviewWithGroq({
+      groqApiKey: execution.groqApiKey,
       diff: filtered.diff
     });
 
