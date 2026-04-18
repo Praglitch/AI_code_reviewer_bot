@@ -1,6 +1,6 @@
-const Anthropic = require("@anthropic-ai/sdk");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "gemini-2.0-flash";
 
 const SYSTEM_PROMPT = [
   "You are a senior software engineer reviewing a pull request diff.",
@@ -18,37 +18,23 @@ const SYSTEM_PROMPT = [
   "If there are no issues, explicitly state that there are no blocking issues and do not invent problems."
 ].join("\n");
 
-function createAnthropicClient(apiKey) {
-  return new Anthropic({ apiKey });
+function createGeminiClient(apiKey) {
+  return new GoogleGenerativeAI(apiKey);
 }
 
-async function reviewWithClaude({ anthropicApiKey, diff }) {
-  const client = createAnthropicClient(anthropicApiKey);
+async function reviewWithGemini({ geminiApiKey, diff }) {
+  const genAI = createGeminiClient(geminiApiKey);
+  const model = genAI.getGenerativeModel({ model: MODEL });
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1500,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Review this pull request diff:\n\n${diff}`
-          }
-        ]
-      }
-    ]
-  });
+  const result = await model.generateContent([
+    { text: SYSTEM_PROMPT },
+    { text: `Review this pull request diff:\n\n${diff}` }
+  ]);
 
-  const textBlocks = Array.isArray(response.content)
-    ? response.content.filter((item) => item.type === "text").map((item) => item.text)
-    : [];
+  const reviewText = result.response.text().trim();
 
-  const reviewText = textBlocks.join("\n\n").trim();
   if (!reviewText) {
-    throw new Error("Claude returned an empty review response.");
+    throw new Error("Gemini returned an empty review response.");
   }
 
   return {
@@ -58,6 +44,6 @@ async function reviewWithClaude({ anthropicApiKey, diff }) {
 }
 
 module.exports = {
-  reviewWithClaude,
+  reviewWithGemini,
   MODEL
 };

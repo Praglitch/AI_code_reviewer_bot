@@ -1,5 +1,5 @@
 const REVIEW_HEADER = "## 🤖 AI Code Review";
-const REVIEW_FOOTER = "_Powered by Claude claude-sonnet-4-20250514 — review suggestions, don't blindly apply them._";
+const REVIEW_FOOTER = "_Powered by Gemini gemini-2.0-flash — review suggestions, don't blindly apply them._";
 
 function buildCommentBody({ content, truncated, originalLength }) {
   const sections = [REVIEW_HEADER, ""];

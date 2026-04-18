@@ -5,19 +5,19 @@ require("dotenv").config();
 
 const { getDiff } = require("./getDiff");
 const { filterDiff } = require("./filterDiff");
-const { reviewWithClaude } = require("./reviewWithClaude");
+const { reviewWithGemini } = require("./reviewWithGemini");
 const { buildCommentBody, postOrUpdateComment } = require("./postComment");
 
 function getExecutionContext() {
   const token = process.env.GITHUB_TOKEN;
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const geminiApiKey = process.env.GEMINI_API_KEY;
 
   if (!token) {
     throw new Error("Missing required environment variable: GITHUB_TOKEN");
   }
 
-  if (!anthropicApiKey) {
-    throw new Error("Missing required environment variable: ANTHROPIC_API_KEY");
+  if (!geminiApiKey) {
+    throw new Error("Missing required environment variable: GEMINI_API_KEY");
   }
 
   const context = github.context;
@@ -38,7 +38,7 @@ function getExecutionContext() {
   return {
     skip: false,
     token,
-    anthropicApiKey,
+    geminiApiKey,
     owner: repoInfo.owner,
     repo: repoInfo.repo,
     pullNumber: pr.number
@@ -90,9 +90,9 @@ async function run() {
       return;
     }
 
-    // Ask Claude to generate a structured review for the filtered diff.
-    const review = await reviewWithClaude({
-      anthropicApiKey: execution.anthropicApiKey,
+    // Ask Gemini to generate a structured review for the filtered diff.
+    const review = await reviewWithGemini({
+      geminiApiKey: execution.geminiApiKey,
       diff: filtered.diff
     });
 
